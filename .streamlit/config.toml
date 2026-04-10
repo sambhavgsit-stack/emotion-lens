@@ -1,0 +1,15 @@
+[server]
+maxUploadSize = 500
+headless = true
+port = 8501
+
+[theme]
+base = "dark"
+backgroundColor = "#0A0A0F"
+secondaryBackgroundColor = "#111118"
+primaryColor = "#7C3AED"
+textColor = "#F0F0FF"
+font = "sans serif"
+
+[browser]
+gatherUsageStats = false
