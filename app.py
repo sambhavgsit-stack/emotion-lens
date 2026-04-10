@@ -1,8 +1,10 @@
+import os
+os.environ["TF_USE_LEGACY_KERAS"] = "1"  # Force legacy Keras 2 — must be before TF import
+
 import streamlit as st
 import cv2
 import numpy as np
 import tempfile
-import os
 import time
 from PIL import Image
 import io
@@ -18,14 +20,14 @@ st.set_page_config(
 # ─── Load Model (cached) ────────────────────────────────────────────────────
 @st.cache_resource(show_spinner=False)
 def load_model():
-    import tensorflow as tf
+    import tf_keras
     from huggingface_hub import hf_hub_download
     with st.spinner("🔄 Loading EmoSense model from HuggingFace..."):
         model_path = hf_hub_download(
             repo_id="sambhavjain13/emotion_model_full.h5",
             filename="emotion_model_full.h5"
         )
-        model = tf.keras.models.load_model(model_path)
+        model = tf_keras.models.load_model(model_path, compile=False)
     return model
 
 # ─── Emotion Config ─────────────────────────────────────────────────────────
