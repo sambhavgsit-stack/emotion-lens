@@ -17,49 +17,17 @@ st.set_page_config(
 )
 
 # ─── Load Model (cached) ────────────────────────────────────────────────────
-def _patch_h5_config(src_path, dst_path):
-    """Strip keys that newer Keras added but TF 2.13 doesn't understand."""
-    import h5py, json, shutil
-    shutil.copy2(src_path, dst_path)
-    BAD_KEYS = {'batch_shape', 'optional', 'ragged', 'sparse'}
-    def fix_layer_config(cfg):
-        if isinstance(cfg, dict):
-            cfg.pop('batch_shape', None)
-            cfg.pop('optional', None)
-            for v in cfg.values():
-                fix_layer_config(v)
-        elif isinstance(cfg, list):
-            for item in cfg:
-                fix_layer_config(item)
-    with h5py.File(dst_path, 'r+') as f:
-        if 'model_config' in f.attrs:
-            raw = f.attrs['model_config']
-            cfg = json.loads(raw)
-            fix_layer_config(cfg)
-            f.attrs['model_config'] = json.dumps(cfg)
-
 @st.cache_resource(show_spinner=False)
 def load_model():
-    import tensorflow as tf
-    import h5py, json, shutil, tempfile
+    import keras
     from huggingface_hub import hf_hub_download
     with st.spinner("🔄 Loading EmoSense model from HuggingFace..."):
         model_path = hf_hub_download(
             repo_id="sambhavjain13/emotion_model_full.h5",
             filename="emotion_model_full.h5"
         )
-        # First try direct load
-        try:
-            model = tf.keras.models.load_model(model_path, compile=False)
-            return model
-        except Exception:
-            pass
-        # Patch the H5 config to remove unsupported keys, then reload
-        patched = tempfile.mktemp(suffix='.h5')
-        _patch_h5_config(model_path, patched)
-        model = tf.keras.models.load_model(patched, compile=False)
-        return model
-
+        model = keras.models.load_model(model_path, compile=False)
+    return model
 # ─── Emotion Config ─────────────────────────────────────────────────────────
 EMOTIONS = ['Angry', 'Disgust', 'Fear', 'Happy', 'Sad', 'Surprise', 'Neutral']
 
