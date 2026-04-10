@@ -19,13 +19,14 @@ st.set_page_config(
 # ─── Load Model (cached) ────────────────────────────────────────────────────
 @st.cache_resource(show_spinner=False)
 def load_model():
-    import tensorflow as tf
     from huggingface_hub import hf_hub_download
     with st.spinner("🔄 Loading EmoSense model from HuggingFace..."):
         model_path = hf_hub_download(
             repo_id="sambhavjain13/emotion_model_full.h5",
             filename="emotion_model_full.h5"
         )
+        import tensorflow as tf
+        tf.compat.v1.disable_eager_execution() if False else None
         model = tf.keras.models.load_model(model_path, compile=False)
     return model
 
@@ -573,18 +574,22 @@ def main():
     </div>
     """, unsafe_allow_html=True)
 
-    # Load model
-    try:
-        model = load_model()
-        face_cascade = load_face_cascade()
-        st.success("✅ Model loaded successfully from HuggingFace!")
-    except Exception as e:
-        st.error(f"❌ Model loading failed: {e}")
-        st.info("Make sure `tensorflow` and `huggingface_hub` are installed.")
-        return
-
-    # Sidebar controls
+    # Sidebar always renders first
     detection_mode, confidence_threshold, frame_skip, show_all_emotions = render_sidebar()
+
+    # Load model
+    model = None
+    face_cascade = None
+    with st.spinner("🔄 Loading model from HuggingFace (first load ~30s)..."):
+        try:
+            model = load_model()
+            face_cascade = load_face_cascade()
+            st.success("✅ Model loaded — sambhavjain13/emotion_model_full.h5")
+        except Exception as e:
+            st.error(f"❌ Model loading failed: {e}")
+            st.code(str(e), language="text")
+            st.warning("⚠️ Check that tensorflow-cpu==2.13.0 and keras==2.13.1 are in requirements.txt")
+            return
 
     st.markdown("---")
 
